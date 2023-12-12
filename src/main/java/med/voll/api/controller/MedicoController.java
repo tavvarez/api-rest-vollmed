@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -33,9 +34,11 @@ public class MedicoController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity cadastrar(@RequestBody @Valid DadosCadastroMedico dados) {
-        repository.save(new Medico(dados));
-        
+    public ResponseEntity cadastrar(@RequestBody @Valid DadosCadastroMedico dados, UriComponentsBuilder uriBuilder) {
+        var medico = new Medico(dados);
+        repository.save(medico);
+        var uri = uriBuilder.path("/medicos/{id}").buildAndExpand(medico.getId()).toUri();
+        return ResponseEntity.created(uri).body(new DadosDetalhamentoMedico(medico));
     }
 
     @GetMapping
@@ -49,7 +52,6 @@ public class MedicoController {
     public ResponseEntity atualizarMedicos(@RequestBody @Valid DadosAtualizacaoMedico dados) {
         var medico = repository.getReferenceById(dados.id());
         medico.atualizarInformacoes(dados);
-
         return ResponseEntity.ok(new DadosDetalhamentoMedico(medico));
     }
 
@@ -57,8 +59,13 @@ public class MedicoController {
     @Transactional
     public ResponseEntity deletarMedico(@PathVariable Long id) {
         var medico = repository.getReferenceById(id);
-        medico.excluirLogico();
-        
+        medico.excluirLogico();        
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity visualizarMedico(@PathVariable Long id) {
+        var medico = repository.getReferenceById(id);              
+        return ResponseEntity.ok(new DadosDetalhamentoMedico(medico));
     }
 }
