@@ -18,7 +18,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/login")
 public class AutenticacaoController {
-    
+
     @Autowired
     private AuthenticationManager manager;
 
@@ -27,9 +27,14 @@ public class AutenticacaoController {
 
     @PostMapping
     public ResponseEntity efetuarLogin(@RequestBody @Valid DadosAutenticacao dados) {
-        var Auhenticationtoken = new UsernamePasswordAuthenticationToken(dados.login(), dados.senha());
-        var authentication = manager.authenticate(Auhenticationtoken);
-        var tokenJWT = tokenService.createToken((Usuario) authentication.getPrincipal());
-        return ResponseEntity.ok(new DadosTokenJWT(tokenJWT));
-    } 
+        try {
+            var authenticationToken = new UsernamePasswordAuthenticationToken(dados.login(), dados.senha());
+            var authentication = manager.authenticate(authenticationToken);
+            var tokenJWT = tokenService.createToken((Usuario) authentication.getPrincipal());
+            return ResponseEntity.ok(new DadosTokenJWT(tokenJWT));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
